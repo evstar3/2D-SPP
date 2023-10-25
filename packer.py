@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import time
 import sys
 import numpy as np
 import random
@@ -37,50 +38,50 @@ class Strip:
             self.unplaced = list(range(problem.n_boxes))
 
     def print_strip(self) -> None:
-        grid = np.full((self.problem.width, self.problem.max_height), '.')
+        grid = np.full((self.problem.width + 1, self.problem.max_height + 1), '·')
     
         for id, (x, y) in self.placements.items():
             w = self.problem.boxes[id].width
             h = self.problem.boxes[id].height
 
             # clear box
-            grid[x : x + w - 1, y : y + h - 1] = ' '
+            grid[x : x + w, y : y + h] = ' '
 
             # set box horizontal lines
-            grid[x : x + w - 1, y        ] = '─'
-            grid[x : x + w - 1, y + h - 1] = '─' 
+            grid[x : x + w, y    ] = '─'
+            grid[x : x + w, y + h] = '─' 
 
             # set box vertical lines
-            grid[x,         y : y + h - 1] = '|'
-            grid[x + w - 1, y : y + h - 1] = '|'
+            grid[x,     y : y + h] = '│'
+            grid[x + w, y : y + h] = '│'
 
             # set box corners
-            grid[x        , y        ] = '└'
-            grid[x + w - 1, y        ] = '┘'
-            grid[x        , y + h - 1] = '┌'
-            grid[x + w - 1, y + h - 1] = '┐'
+            grid[x    , y    ] = '└'
+            grid[x + w, y    ] = '┘'
+            grid[x    , y + h] = '┌'
+            grid[x + w, y + h] = '┐'
 
-        for c in range(self.problem.max_height):
-            for r in range(self.problem.width):
-                char = grid[r][self.problem.max_height - c - 1]
-                end = '─' if char in ['┌','└','─'] else ' '
-                print(grid[r][self.problem.max_height - c - 1], end=end)
+        for c in range(grid.shape[1]):
+            for r in range(grid.shape[0]):
+                char = grid[r][grid.shape[1] - c - 1]
+
+                if (char in ['┌','└','─']):
+                    end = '─'
+                elif (char == '═'):
+                    end = '═'
+                else:
+                    end = ' '
+
+                print(char, end=end)
             print()
 
     def isCollision(b1: Box, x1: int, y1: int, b2: Box, x2: int, y2: int):
-        # Is the RIGHT edge of r1 to the RIGHT of the LEFT edge of r2?
-        # Is the LEFT edge of r1 to the LEFT of the RIGHT edge of r2?
-        # Is the BOTTOM edge of r1 BELOW the TOP edge of r2?
-        # Is the TOP edge of r1 ABOVE the BOTTOM edge of r2?
-
-        collision = all((
+        return all((
             x1 + b1.width > x2,
             x1 < x2 + b2.width,
             y1 + b1.height > y2,
             y1 < y2 + b2.height,
         ))
-
-        return collision
     
     def isValidPlacement(self, box_id: int, x: int, y: int) -> bool:
         box = self.problem.boxes[box_id]
@@ -113,13 +114,21 @@ class Strip:
 
 
 strip = Strip(Problem(sys.stdin))
+print(strip.unplaced)
 while strip.unplaced:
     box_id = strip.unplaced[0]
     x = 0
     y = 0
+
     while (not strip.isValidPlacement(box_id, x, y)[0]):
         x = random.randint(0, strip.problem.width)
         y = random.randint(0, strip.problem.max_height)
+    
+    # while (not strip.isValidPlacement(box_id, x, y)[0]):
+    #     y += 1
+
+    # while (not strip.isValidPlacement(box_id, x, y)[0]):
+    #     x += 1
 
     strip.place(box_id, x, y)
 
