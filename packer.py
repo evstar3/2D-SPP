@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import time
 import sys
 import numpy as np
 import random
@@ -20,7 +19,7 @@ class Box:
 class Problem:
     def __init__(self, fp) -> None:
         self.n_boxes = int(fp.readline().strip())
-        self.width, self.optimal_height = [int(n.strip()) for n in fp.readline().split(' ')]
+        self.width = [int(n.strip()) for n in fp.readline().split(' ')][0]
         
         self.boxes = [Box.from_string(line) for line in fp.readlines()]
 
@@ -112,9 +111,7 @@ class Strip:
         self.unplaced.remove(box_id)
         self.placements[box_id] = (x, y)
 
-
 strip = Strip(Problem(sys.stdin))
-print(strip.unplaced)
 while strip.unplaced:
     box_id = strip.unplaced[0]
     x = 0
