@@ -197,18 +197,3 @@ def SF(strip: Strip):
         new_shelves[new_shelf_height][0] = strip.problem.boxes[id].width
         new_shelves[new_shelf_height][1] = strip.problem.boxes[id].height
 
-with open(sys.argv[1]) as fp:
-    problem = (Problem(fp))
-
-algs = {
-    # 'BL'  : BL,
-    'NFDH': NFDH,
-    'FFDH': FFDH,
-    'SF'  : SF,
-}
-
-print(f'=========={sys.argv[1]}==========')
-for algname, func in algs.items():
-    strip = Strip(problem)
-    func(strip)
-    print(f'{algname}: {strip.max_height()}')
