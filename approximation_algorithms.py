@@ -92,7 +92,8 @@ def SF(strip: Strip):
     )
 
     # FFDH on wide
-    shelves = {0: [0, 0]}
+    # TODO: get better data structures
+    shelves = {0: [0, 0]} # shelves[shelf] = [next open x pos, height of tallest box on shelf]
     while (wide):
         id = wide.pop()
 
