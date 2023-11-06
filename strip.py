@@ -28,12 +28,12 @@ class Problem:
 class Strip:
     def __init__(self, problem: Problem) -> None:
         self.problem = problem
-        self.placements = {}
+        self.placements = {id: None for id in list(range(problem.n_boxes))}
 
         self.BL_soln  = list(range(problem.n_boxes))
 
-        self.unplaced = list(range(problem.n_boxes))
-        random.shuffle(self.unplaced)
+    def unplaced(self):
+        return [id for id, pos in self.placements.items() if pos is None]
 
     def _merge_border_chars(c1: str, c2: str) -> str: # WORK IN PROGRESS
         if (len(c1) != 1 or len(c2) != 1):
@@ -70,7 +70,12 @@ class Strip:
     def print_strip(self) -> None:
         grid = np.full((self.problem.width + 1, self.problem.max_height + 1), '·')
     
-        for id, (x, y) in self.placements.items():
+        for id, pos in self.placements.items():
+            if not pos:
+                continue
+
+            x, y = pos
+
             w = self.problem.boxes[id].width
             h = self.problem.boxes[id].height
 
@@ -103,7 +108,7 @@ class Strip:
                 print(char, end=end)
             print()
 
-    def isCollision(b1: Box, x1: int, y1: int, b2: Box, x2: int, y2: int):
+    def is_collision(b1: Box, x1: int, y1: int, b2: Box, x2: int, y2: int):
         return all((
             x1 + b1.width > x2,
             x1 < x2 + b2.width,
@@ -111,7 +116,10 @@ class Strip:
             y1 < y2 + b2.height,
         ))
     
-    def isValidPlacement(self, box_id: int, x: int, y: int) -> bool:
+    def is_valid_placement(self, box_id: int, x: int, y: int) -> bool:
+        if box_id not in self.unplaced():
+            return Falses
+        
         box = self.problem.boxes[box_id]
         out_of_bounds = any((
             x < 0,
@@ -121,29 +129,52 @@ class Strip:
         ))
 
         if (out_of_bounds):
-            return False, 'Out of bounds'
+            return False
         
-        for b2, (x2, y2) in self.placements.items():
-            if (Strip.isCollision(box, x, y, self.problem.boxes[b2], x2, y2)):
-                return False, 'Collision'
+        for b2, pos in self.placements.items():
+            if pos is None:
+                continue
 
-        return True, None
+            if (Strip.is_collision(box, x, y, self.problem.boxes[b2], *pos)):
+                return False
+
+        return True
 
     def place(self, box_id: int, x: int, y: int):
-        if (box_id not in self.unplaced):
+        if (self.placements[box_id]):
             raise RuntimeError(f'Box(id={box_id}) already placed')
         
-        isValid, msg = self.isValidPlacement(box_id, x, y)
-        if (not isValid):
-            raise RuntimeError(msg)
+        is_valid = self.is_valid_placement(box_id, x, y)
+        if (not is_valid):
+            raise RuntimeError('invalid placement')
         
-        self.unplaced.remove(box_id)
         self.placements[box_id] = (x, y)
+
+    def is_valid_move(self, box_id: int, x: int, y: int) -> bool:
+        if box_id in self.unplaced():
+            return False
+        
+        old_x, old_y = self.placements[box_id]
+        self.placements[box_id] = None
+
+        if (self.is_valid_placement(box_id, x, y)):
+            self.place(box_id, old_x, old_y)
+            return True
+        
+        self.place(box_id, old_x, old_y)
+        return False
+
+    def move_box(self, box_id: int, x: int, y: int):       
+        if (not self.is_valid_move(box_id, x, y)):
+            raise RuntimeError('invalid move')
+
+        self.placements[box_id] = None
+        self.place(box_id, x, y)
 
     def max_height(self):
         if (not self.placements):
             raise RuntimeError('Strip.max_height(): No boxes placed')
         
-        return max(self.problem.boxes[box_id].width + x for box_id, (x, _) in self.placements.items())
+        return max(self.problem.boxes[box_id].height + pos[1] for box_id, pos in self.placements.items() if pos)
 
 
