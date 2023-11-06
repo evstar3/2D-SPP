@@ -26,15 +26,46 @@ class Problem:
         self.max_height = sum(box.height for box in self.boxes)
 
 class Strip:
-    def __init__(self, problem: Problem, initial_placements=None) -> None:
+    def __init__(self, problem: Problem) -> None:
         self.problem = problem
         self.placements = {}
 
-        if (initial_placements):
-            self.placements.update(initial_placements)
-            self.unplaced = [i for i in range(problem.n_boxes) if i not in initial_placements]
-        else:
-            self.unplaced = list(range(problem.n_boxes))
+        self.BL_soln  = list(range(problem.n_boxes))
+
+        self.unplaced = list(range(problem.n_boxes))
+        random.shuffle(self.unplaced)
+
+    def _merge_border_chars(c1: str, c2: str) -> str: # WORK IN PROGRESS
+        if (len(c1) != 1 or len(c2) != 1):
+            raise RuntimeError(f'_merge_border expects two box drawing characters')
+        
+        map = {
+        #              ┘        ┌        ┐        ─        │
+            '└': {'┘':'┴', '┌':'├', '┐':'┼', '─':'┴', '│':'├'},
+            '┘':          {'┌':'┼', '┐':'┤', '─':'┴', '│':'┤'},
+            '┌':                   {'┐':'┬', '─':'┬', '│':'├'},
+            '┐':                            {'─':'┬', '│':'┤'},
+            '─':                                     {'│':'┼'},
+            '│':                                            {},
+        }
+
+        for x, arr in map.items():
+            for y, z in arr.items():
+                map[y][x] = z
+
+        if (c1 == c2):
+            return c1
+        
+        if (c1 == '┼' or c2 == '┼'):
+            return '┼'
+        
+        if (c1 in ('·', ' ')):
+            return c2
+        
+        if (c2 in ('·', ' ')):
+            return c1
+        
+        return map[c1][c2]
 
     def print_strip(self) -> None:
         grid = np.full((self.problem.width + 1, self.problem.max_height + 1), '·')
@@ -66,8 +97,6 @@ class Strip:
 
                 if (char in ['┌','└','─']):
                     end = '─'
-                elif (char == '═'):
-                    end = '═'
                 else:
                     end = ' '
 
@@ -111,24 +140,10 @@ class Strip:
         self.unplaced.remove(box_id)
         self.placements[box_id] = (x, y)
 
-strip = Strip(Problem(sys.stdin))
-while strip.unplaced:
-    box_id = strip.unplaced[0]
-    x = 0
-    y = 0
-
-    while (not strip.isValidPlacement(box_id, x, y)[0]):
-        x = random.randint(0, strip.problem.width)
-        y = random.randint(0, strip.problem.max_height)
-    
-    # while (not strip.isValidPlacement(box_id, x, y)[0]):
-    #     y += 1
-
-    # while (not strip.isValidPlacement(box_id, x, y)[0]):
-    #     x += 1
-
-    strip.place(box_id, x, y)
-
-strip.print_strip()
+    def max_height(self):
+        if (not self.placements):
+            raise RuntimeError('Strip.max_height(): No boxes placed')
+        
+        return max(self.problem.boxes[box_id].width + x for box_id, (x, _) in self.placements.items())
 
 
