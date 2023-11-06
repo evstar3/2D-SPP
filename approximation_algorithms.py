@@ -2,71 +2,212 @@
 
 from strip import Strip, Problem
 import sys
-import random
 
 def BL(strip: Strip):
+    '''Bottom-up left-justified'''
     while (strip.unplaced()):
-        box_id = random.choice(strip.unplaced())
         x = 0
         y = 0
 
-        while (not strip.is_valid_placement(box_id, x, y)):
+        while (not strip.is_valid_placement(strip.unplaced()[0], x, y)):
             x += 1
             if (x == strip.problem.width):
                 x = 0
                 y += 1
 
-        strip.place(box_id, x, y)
+        strip.place(strip.unplaced()[0], x, y)
 
-def RF(strip: Strip):
-    # stack all boxes wider than W/2 in bottom left
-    wide_boxes = (box_id for box_id in strip.placements
-                  if strip.problem.boxes[box_id].width > strip.problem.width / 2)
+def NFDH(strip: Strip):
+    '''Next-fit decreasing-height'''
+    sorted_ids = sorted(strip.unplaced(), key = lambda x: strip.problem.boxes[x].height)
 
-    for box_id in wide_boxes:
-        y = 0
-        while (not strip.is_valid_placement(box_id, 0, y)):
-            y += 1
-        strip.place(box_id, 0, y)
-
-    shelves = {}
-    shelves[0] = strip.max_height()
-
-    # sort remaining boxes by decreasing height
-    narrow_boxes = sorted(strip.placements, key=lambda x: strip.problem.boxes[x].height, reverse=True)
-    h_max = max(strip.problem.boxes[id].height for id in narrow_boxes)
-    
-    # place first shelf
     x = 0
-    while (strip.is_valid_placement(narrow_boxes[0], x, shelves[0])):
-        id = narrow_boxes.pop(0)
-        strip.place(id, x, shelves[0])
+    y = 0
+    shelf_height = 0
+    while (sorted_ids):
+        id = sorted_ids.pop()
+        
+        while True:
+            while (not strip.is_valid_placement(id, x, y)) and x < strip.problem.width:
+                x += 1
+
+            if (strip.is_valid_placement(id, x, y)):
+                break
+            
+            y += shelf_height
+            shelf_height = 0
+            x = 0
+
+        strip.place(id, x, y)
+
+        if (shelf_height == 0):
+            shelf_height = strip.problem.boxes[id].height
+        
         x += strip.problem.boxes[id].width
 
-    h1 = max(strip.problem.boxes[id].height for id in strip.unplaced())
 
-    shelves[2] = shelves[0] + h_max + h1
+def FFDH(strip: Strip):
+    '''First-fit decreasing-height'''
+    sorted_ids = sorted(strip.unplaced(), key = lambda x: strip.problem.boxes[x].height)
 
-    x2 = strip.problem.width
-    while strip.unplaced() and x2 >= strip.problem.width / 2:
-        box = strip.problem.boxes[narrow_boxes[0]]
-        if (strip.is_valid_placement(narrow_boxes[0], x, shelves[0])):
-            strip.place(narrow_boxes[0], x, shelves[0])
-            x += box.width
-        elif (strip.is_valid_placement(narrow_boxes[0], x2 - box.width, shelves[2] - box.height)):
-            strip.place(narrow_boxes[0], x2 - box.width, shelves[2] - box.height)
-            x2 -= box.width
-        narrow_boxes.pop(0)
+    shelves = {0: 0}
+    while (sorted_ids):
+        id = sorted_ids.pop()
+
+        placed = False
+
+        for y in shelves:
+            x = 0
+            while (not strip.is_valid_placement(id, x, y)) and x < strip.problem.width:
+                x += 1
+
+            if (strip.is_valid_placement(id, x, y)):
+                placed = True
+                strip.place(id, x, y)
+                if (shelves[y] == 0):
+                    shelves[y] = strip.problem.boxes[id].height
+            
+        if (placed):
+            continue
+            
+        new_shelf_height = y + shelves[y]
+        strip.place(id, 0, new_shelf_height)
+        shelves[new_shelf_height] = strip.problem.boxes[id].height
+
+def SF(strip: Strip):
+    '''Split fit'''
+    m = 1
+    while (all(box.width < (strip.problem.width / (m + 1)) for box in strip.problem.boxes)):
+        m += 1
+
+    wide = sorted(
+        [id for id in strip.unplaced()
+            if strip.problem.boxes[id].width > strip.problem.width / (m + 1)],
+        key = lambda x: strip.problem.boxes[x].height
+    )
+
+    narrow = sorted(
+        [id for id in strip.unplaced() if id not in wide],
+        key = lambda x: strip.problem.boxes[x].height
+    )
+
+    # FFDH on wide
+    shelves = {0: [0, 0]}
+    while (wide):
+        id = wide.pop()
+
+        placed = False
+
+        Y = -1
+        for y in shelves:
+            x = 0
+            Y = y
+            while (not strip.is_valid_placement(id, x, y)) and x < strip.problem.width:
+                x += 1
+
+            if (strip.is_valid_placement(id, x, y)):
+                placed = True
+                strip.place(id, x, y)
+                shelves[y][0] += strip.problem.boxes[id].width
+                if (shelves[y][1] == 0):
+                    shelves[y][1] = strip.problem.boxes[id].height
+            
+        if (placed):
+            continue
+            
+        new_shelf_height = Y + shelves[Y][1] if Y != -1 else 0
+        strip.place(id, 0, new_shelf_height)
+        shelves[new_shelf_height] = [0, 0]
+        shelves[new_shelf_height][0] = strip.problem.boxes[id].width
+        shelves[new_shelf_height][1] = strip.problem.boxes[id].height
+
+    boxes_by_shelf = {}
+    for id, pos in strip.placements.items():
+        if pos is None:
+            continue
+        x, y = pos
+        if (y not in boxes_by_shelf):
+            boxes_by_shelf[y] = []
+
+        boxes_by_shelf[y].append((id, (x, y)))
+
+    strip.clear_placements()
+
+    # sort the widest shelves to the bottom
+    widest_shelves = [shelf for shelf, info in shelves.items()
+                      if info[0] > (strip.problem.width * (m + 1)) / (m + 2)]
+    
+    new_shelves = {}
+    new_shelf_height = 0
+    while (widest_shelves):
+        shelf = widest_shelves.pop()
+
+        new_shelves[new_shelf_height] = [0, 0]
+
+        for id, (x, _) in boxes_by_shelf[shelf]:
+            strip.place(id, x, new_shelf_height)
+            new_shelves[new_shelf_height][0] += strip.problem.boxes[id].width
+            
+            if (strip.problem.boxes[id].height > new_shelves[new_shelf_height][1]):
+                new_shelves[new_shelf_height][1] = strip.problem.boxes[id].height
+
+        del boxes_by_shelf[shelf]
+
+        new_shelf_height += new_shelves[new_shelf_height][1]
+
+    for old_shelf in boxes_by_shelf.values():
+        new_shelves[new_shelf_height] = [0, 0]
+        for id, (x, y) in old_shelf:
+            strip.place(id, x, new_shelf_height)
+            new_shelves[new_shelf_height][0] += strip.problem.boxes[id].width
+
+            if (strip.problem.boxes[id].height > new_shelves[new_shelf_height][1]):
+                new_shelves[new_shelf_height][1] = strip.problem.boxes[id].height
+
+        new_shelf_height += new_shelves[new_shelf_height][1]
+
+    # FFDH on narrow
+    while (narrow):
+        id = narrow.pop()
+
+        placed = False
+
+        Y = -1
+        for y in new_shelves:
+            x = 0
+            Y = y
+            while (not strip.is_valid_placement(id, x, y)) and x < strip.problem.width:
+                x += 1
+
+            if (strip.is_valid_placement(id, x, y)):
+                placed = True
+                strip.place(id, x, y)
+                new_shelves[y][0] += strip.problem.boxes[id].width
+                if (new_shelves[y][1] == 0):
+                    new_shelves[y][1] = strip.problem.boxes[id].height
+            
+        if (placed):
+            continue
+        
+        
+        new_shelf_height = Y + new_shelves[Y][1] if Y != -1 else 0
+        strip.place(id, 0, new_shelf_height)
+        new_shelves[new_shelf_height] = [0, 0]
+        new_shelves[new_shelf_height][0] = strip.problem.boxes[id].width
+        new_shelves[new_shelf_height][1] = strip.problem.boxes[id].height
 
 with open(sys.argv[1]) as fp:
-    strip = Strip(Problem(fp))
+    problem = (Problem(fp))
 
-RF(strip)
+algs = {
+    # 'BL'  : BL,
+    'NFDH': NFDH,
+    'FFDH': FFDH,
+    'SF'  : SF,
+}
 
-strip.print_strip()
-
-print(strip.max_height())
-
-
-
-
+print(f'=========={sys.argv[1]}==========')
+for algname, func in algs.items():
+    strip = Strip(problem)
+    func(strip)
+    print(f'{algname}: {strip.max_height()}')

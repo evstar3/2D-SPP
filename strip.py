@@ -28,9 +28,15 @@ class Problem:
 class Strip:
     def __init__(self, problem: Problem) -> None:
         self.problem = problem
-        self.placements = {id: None for id in list(range(problem.n_boxes))}
+        
+        self.clear_placements()
 
         self.BL_soln  = list(range(problem.n_boxes))
+
+    def clear_placements(self):
+        ids = list(range(self.problem.n_boxes))
+        random.shuffle(ids)
+        self.placements = {id: None for id in ids}
 
     def unplaced(self):
         return [id for id, pos in self.placements.items() if pos is None]
@@ -118,7 +124,7 @@ class Strip:
     
     def is_valid_placement(self, box_id: int, x: int, y: int) -> bool:
         if box_id not in self.unplaced():
-            return Falses
+            return False
         
         box = self.problem.boxes[box_id]
         out_of_bounds = any((
@@ -172,8 +178,8 @@ class Strip:
         self.place(box_id, x, y)
 
     def max_height(self):
-        if (not self.placements):
-            raise RuntimeError('Strip.max_height(): No boxes placed')
+        if (len(self.unplaced()) == self.problem.n_boxes):
+            return 0
         
         return max(self.problem.boxes[box_id].height + pos[1] for box_id, pos in self.placements.items() if pos)
 
