@@ -1,21 +1,22 @@
 #!/usr/bin/env python3
 
 from strip import Strip, Problem
-import sys
+import random
 
 def BL(strip: Strip):
     '''Bottom-up left-justified'''
-    while (strip.unplaced()):
+    shuf = random.sample(strip.unplaced(), k = len(strip.unplaced()))
+    while (shuf):
         x = 0
         y = 0
 
-        while (not strip.is_valid_placement(strip.unplaced()[0], x, y)):
+        while (not strip.is_valid_placement(shuf[0], x, y)):
             x += 1
             if (x == strip.problem.width):
                 x = 0
                 y += 1
 
-        strip.place(strip.unplaced()[0], x, y)
+        strip.place(shuf.pop(0), x, y)
 
 def NFDH(strip: Strip):
     '''Next-fit decreasing-height'''

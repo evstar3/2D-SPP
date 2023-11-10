@@ -34,11 +34,11 @@ else:
     with open(args.filename) as fp:
         problem = (Problem(fp))
 
-strip = Strip(problem)
+strip = Strip(problem, None)
 
 methods[args.method](strip)
 
 if (args.print_strip):
-    strip.print_strip()
+    strip.print()
 
 print(f'Height: {strip.max_height()}')

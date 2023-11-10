@@ -26,25 +26,68 @@ class Problem:
         self.max_height = sum(box.height for box in self.boxes)
 
 class Strip:
-    def __init__(self, problem: Problem) -> None:
+    def __init__(self, problem: Problem, init_placements: None) -> None:
         self.problem = problem
-        
+
         self.clear_placements()
 
-        self.BL_soln  = list(range(problem.n_boxes))
+        if (init_placements):
+            for id, (x, y) in init_placements.items():
+                self.place(id, x, y)
 
     def clear_placements(self):
-        ids = list(range(self.problem.n_boxes))
-        random.shuffle(ids)
-        self.placements = {id: None for id in ids}
+        self.placements = {id: None for id in list(range(self.problem.n_boxes))}
 
     def unplaced(self):
         return [id for id, pos in self.placements.items() if pos is None]
 
-    def _merge_border_chars(c1: str, c2: str) -> str: # WORK IN PROGRESS
+    def would_touch_edge(self, box_id: int, x: int, y: int) -> bool:
+        if (x == 0 or y == 0):
+            return True
+        
+        return x + self.problem.boxes[box_id].width == self.problem.width
+    
+    def are_touching(self, placed_id: int, test_id: int, test_x: int, test_y: int) -> bool:
+        if (not self.placements[placed_id]):
+            raise RuntimeError(f'Box placed_id={placed_id} is not placed')
+                        
+        placed_x, placed_y = self.placements[placed_id]
+        placed_w = self.problem.boxes[placed_id].width
+        placed_h = self.problem.boxes[placed_id].height
+
+        test_w = self.problem.boxes[test_id].width
+        test_h = self.problem.boxes[test_id].height
+
+        # right edge
+        if (test_x == placed_x + placed_w):
+            if (test_y + test_h >= placed_y and test_y <= placed_y + placed_h):
+                return True
+            
+        # top edge
+        if (test_y == placed_y + placed_h):
+            if (test_x + test_w >= placed_x and test_x <= placed_x + placed_w):
+                return True
+        
+        # left edge
+        if (test_x + test_w == placed_x):
+            if (test_y + test_h >= placed_y and test_y <= placed_y + placed_h):
+                return True
+
+        # bottom edge
+        if (test_y + test_h == placed_y):
+            if (test_x + test_w >= placed_x and test_x <= placed_x + placed_w):
+                return True
+
+        return False
+    
+    def would_touch_other_box(self, box_id: int, x: int, y: int) -> bool:
+        return any(self.are_touching(placed_id, box_id, x, y) for placed_id, pos in self.placements.items() if pos)
+
+    def _merge_border_chars(c1: str, c2: str) -> str:
         if (len(c1) != 1 or len(c2) != 1):
             raise RuntimeError(f'_merge_border expects two box drawing characters')
         
+        # TODO: get add remaining characters to map
         map = {
         #              ┘        ┌        ┐        ─        │
             '└': {'┘':'┴', '┌':'├', '┐':'┼', '─':'┴', '│':'├'},
@@ -73,7 +116,7 @@ class Strip:
         
         return map[c1][c2]
 
-    def print_strip(self) -> None:
+    def print(self) -> None:
         grid = np.full((self.problem.width + 1, self.problem.max_height + 1), '·')
     
         for id, pos in self.placements.items():
@@ -123,7 +166,7 @@ class Strip:
         ))
     
     def is_valid_placement(self, box_id: int, x: int, y: int) -> bool:
-        if box_id not in self.unplaced():
+        if self.placements[box_id] is not None:
             return False
         
         box = self.problem.boxes[box_id]
@@ -157,7 +200,7 @@ class Strip:
         self.placements[box_id] = (x, y)
 
     def is_valid_move(self, box_id: int, x: int, y: int) -> bool:
-        if box_id in self.unplaced():
+        if self.placements[box_id] is not None:
             return False
         
         old_x, old_y = self.placements[box_id]
@@ -178,7 +221,7 @@ class Strip:
         self.place(box_id, x, y)
 
     def max_height(self):
-        if (len(self.unplaced()) == self.problem.n_boxes):
+        if (len([id for id, pos in self.placements.items() if pos]) == 0):
             return 0
         
         return max(self.problem.boxes[box_id].height + pos[1] for box_id, pos in self.placements.items() if pos)
