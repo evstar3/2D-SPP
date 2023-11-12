@@ -5,22 +5,24 @@ import random
 
 def BL(strip: Strip):
     '''Bottom-up left-justified'''
-    shuf = random.sample(strip.unplaced(), k = len(strip.unplaced()))
+    shuf = random.sample(strip.unplaced, k = len(strip.unplaced))
+    
     while (shuf):
+        id = shuf.pop()
         x = 0
         y = 0
 
-        while (not strip.is_valid_placement(shuf[0], x, y)):
+        while (not strip.is_valid_placement(id, x, y)):
             x += 1
             if (x == strip.problem.width):
                 x = 0
                 y += 1
 
-        strip.place(shuf.pop(0), x, y)
+        strip.place(id, x, y)
 
 def NFDH(strip: Strip):
     '''Next-fit decreasing-height'''
-    sorted_ids = sorted(strip.unplaced(), key = lambda x: strip.problem.boxes[x].height)
+    sorted_ids = sorted(strip.unplaced, key = lambda x: strip.problem.boxes[x].height)
 
     x = 0
     y = 0
@@ -49,7 +51,7 @@ def NFDH(strip: Strip):
 
 def FFDH(strip: Strip):
     '''First-fit decreasing-height'''
-    sorted_ids = sorted(strip.unplaced(), key = lambda x: strip.problem.boxes[x].height)
+    sorted_ids = sorted(strip.unplaced, key = lambda x: strip.problem.boxes[x].height)
 
     shelves = {0: 0}
     while (sorted_ids):
@@ -82,13 +84,13 @@ def SF(strip: Strip):
         m += 1
 
     wide = sorted(
-        [id for id in strip.unplaced()
+        [id for id in strip.unplaced
             if strip.problem.boxes[id].width > strip.problem.width / (m + 1)],
         key = lambda x: strip.problem.boxes[x].height
     )
 
     narrow = sorted(
-        [id for id in strip.unplaced() if id not in wide],
+        [id for id in strip.unplaced if id not in wide],
         key = lambda x: strip.problem.boxes[x].height
     )
 
@@ -125,8 +127,6 @@ def SF(strip: Strip):
 
     boxes_by_shelf = {}
     for id, pos in strip.placements.items():
-        if pos is None:
-            continue
         x, y = pos
         if (y not in boxes_by_shelf):
             boxes_by_shelf[y] = []
