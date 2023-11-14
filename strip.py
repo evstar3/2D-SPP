@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
 
-import sys
 import numpy as np
-import random
 
 class Box:
     def __init__(self, width: int, height: int) -> None:
         self.width = width
         self.height = height
+        self.area = self.width * self.height
 
     def from_string(line: str):
         tokens = line.split(' ')
@@ -28,6 +27,7 @@ class Problem:
 class Strip:
     def __init__(self, problem: Problem, init_placements: None) -> None:
         self.problem = problem
+        self.max_height = 0
 
         self.placements = {}
         self.unplaced = [id for id in range(self.problem.n_boxes)]
@@ -35,6 +35,7 @@ class Strip:
         if (init_placements):
             for id, (x, y) in init_placements.items():
                 self.place(id, (x, y))
+
 
     def clear_placements(self):
         self.placements = {}
@@ -202,10 +203,11 @@ class Strip:
         self.unplaced.remove(box_id)        
         self.placements[box_id] = pos
 
-    def max_height(self):
-        if (len(self.placements) == 0):
-            return 0
-        
-        return max(self.problem.boxes[box_id].height + pos[1] for box_id, pos in self.placements.items())
+        new_height = pos[1] + self.problem.boxes[box_id].height
+        if (new_height > self.max_height):
+            self.max_height = new_height
+    
+    def total_area(self):
+        return sum(self.problem.boxes[id].area for id in self.placements)
 
 

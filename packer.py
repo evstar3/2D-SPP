@@ -41,4 +41,4 @@ methods[args.method](strip)
 if (args.print_strip):
     strip.print()
 
-print(f'Height: {strip.max_height()}')
+print(f'Height: {strip.max_height}')
