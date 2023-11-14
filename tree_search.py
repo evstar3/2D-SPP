@@ -56,16 +56,9 @@ class TreeNode():
             for pos in self.smart_prospectives(id):
                 yield (id, pos)
     
-    def cost_height_plus_remaining_height(self):
+    def height_plus_remaining_height(self):
         return self.strip.max_height + sum(self.strip.problem.boxes[id].height for id in self.strip.unplaced)
     
-    def cost_h_rh_density(self):
-        return \
-            self.strip.max_height + \
-            sum(self.strip.problem.boxes[id].height for id in self.strip.unplaced) + \
-            self.strip.total_area() / self.strip.max_height
-            
-
     def expand(self):
         if (self.visited):
             raise RuntimeError('node already expanded')
@@ -101,28 +94,34 @@ class Tree():
 
             if (len(child.strip.unplaced) == 0):
                 heapq.heappush(self.complete, (cost, child))
-
-            heapq.heappush(self.frontier, (cost, child))
+            else:
+                heapq.heappush(self.frontier, (cost, child))
 
         return None
 
-    def run_search(self, max_iters):
+    def search(self, max_iters) -> TreeNode | None:
         for _ in tqdm.tqdm(range(max_iters)):
             self.visit_best()
+
+        if (len(self.complete) == 0):
+            return None
+        
+        return tree.complete[0][1]
 
 with open(sys.argv[1]) as fp:
     prob = Problem(fp)
 
-tree: Tree = Tree(prob, TreeNode.cost_height_plus_remaining_height)
+tree: Tree = Tree(prob, TreeNode.height_plus_remaining_height)
 max_iters = 1000
-tree.run_search(max_iters=max_iters)
+soln = tree.search(max_iters=max_iters)
 
-if len(tree.complete) == 0:
-    print(f'No solution found with {max_iters} iterations')
-else:
-    soln = tree.complete[0][1]
+if soln:
+    for cost, node in tree.complete[:20]:
+        print(cost)
     soln.strip.print()
     print(soln.strip.max_height)
+else:
+    print(f'No solution found with {max_iters} iterations')
 
 
 
