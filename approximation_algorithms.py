@@ -3,13 +3,15 @@
 from strip import Strip, Problem
 import random
 
-def BL(problem: Problem) -> Strip:
+def BL(problem: Problem, order=None) -> Strip:
     '''Bottom-up left-justified'''
     strip = Strip(problem, None)
-    shuf = random.sample(strip.unplaced, k = len(strip.unplaced))
+
+    if order is None:
+        order = random.sample(strip.unplaced, k = len(strip.unplaced))
     
-    while (shuf):
-        id = shuf.pop()
+    while (order):
+        id = order.pop()
         x = 0
         y = 0
 

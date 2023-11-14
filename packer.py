@@ -24,10 +24,16 @@ parser = argparse.ArgumentParser(
 parser.add_argument('filename')
 parser.add_argument(
     'method',
-    help='Available methods: ' + ', '.join(methods),
+    help='available methods: ' + ', '.join(methods),
 )
 parser.add_argument('-p', '--print-strip', action='store_true')
-parser.add_argument('-i', '--max-iters', required=False, type=int)
+parser.add_argument(
+    '-i',
+    '--max-iters',
+    required=False,
+    type=int,
+    help='required for tree search'
+)
 
 args = parser.parse_args()
 
