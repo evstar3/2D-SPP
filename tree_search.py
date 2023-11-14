@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import sys
 from strip import Strip, Problem
 import itertools
 import tqdm
@@ -58,7 +57,7 @@ class TreeNode():
     
     def height_plus_remaining_height(self):
         return self.strip.max_height + sum(self.strip.problem.boxes[id].height for id in self.strip.unplaced)
-    
+      
     def expand(self):
         if (self.visited):
             raise RuntimeError('node already expanded')
@@ -75,7 +74,7 @@ class TreeNode():
         return False
     
 class Tree():
-    def __init__(self, problem: Problem, cost_func) -> None:
+    def __init__(self, problem: Problem, cost_func=TreeNode.height_plus_remaining_height) -> None:
         self.root = TreeNode(problem, None)
 
         self.cost_func = cost_func
@@ -106,22 +105,14 @@ class Tree():
         if (len(self.complete) == 0):
             return None
         
-        return tree.complete[0][1]
+        return self.complete[0][1]
 
-with open(sys.argv[1]) as fp:
-    prob = Problem(fp)
+def run_tree_search(problem: Problem, max_iters: int) -> Strip | None:
+    tree: Tree = Tree(problem)
+    soln_node: TreeNode | None = tree.search(max_iters)
 
-tree: Tree = Tree(prob, TreeNode.height_plus_remaining_height)
-max_iters = 1000
-soln = tree.search(max_iters=max_iters)
+    if (soln_node is None):
+        print(f'No solution found with {max_iters} iterations')
+        return None
 
-if soln:
-    for cost, node in tree.complete[:20]:
-        print(cost)
-    soln.strip.print()
-    print(soln.strip.max_height)
-else:
-    print(f'No solution found with {max_iters} iterations')
-
-
-
+    return soln_node.strip

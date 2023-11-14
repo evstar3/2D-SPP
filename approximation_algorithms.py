@@ -3,8 +3,9 @@
 from strip import Strip, Problem
 import random
 
-def BL(strip: Strip):
+def BL(problem: Problem) -> Strip:
     '''Bottom-up left-justified'''
+    strip = Strip(problem, None)
     shuf = random.sample(strip.unplaced, k = len(strip.unplaced))
     
     while (shuf):
@@ -20,8 +21,11 @@ def BL(strip: Strip):
 
         strip.place(id, (x, y))
 
-def NFDH(strip: Strip):
+    return strip
+
+def NFDH(problem: Problem) -> Strip:
     '''Next-fit decreasing-height'''
+    strip = Strip(problem, None)
     sorted_ids = sorted(strip.unplaced, key = lambda x: strip.problem.boxes[x].height)
 
     x = 0
@@ -48,9 +52,12 @@ def NFDH(strip: Strip):
         
         x += strip.problem.boxes[id].width
 
+    return strip
 
-def FFDH(strip: Strip):
+
+def FFDH(problem: Problem) -> Strip:
     '''First-fit decreasing-height'''
+    strip = Strip(problem, None)
     sorted_ids = sorted(strip.unplaced, key = lambda x: strip.problem.boxes[x].height)
 
     shelves = {0: 0}
@@ -77,8 +84,11 @@ def FFDH(strip: Strip):
         strip.place(id, (0, new_shelf_height))
         shelves[new_shelf_height] = strip.problem.boxes[id].height
 
-def SF(strip: Strip):
+    return strip
+
+def SF(problem: Problem) -> Strip:
     '''Split fit'''
+    strip = Strip(problem, None)
     m = 1
     while (all(box.width < (strip.problem.width / (m + 1)) for box in strip.problem.boxes)):
         m += 1
@@ -197,4 +207,6 @@ def SF(strip: Strip):
         new_shelves[new_shelf_height] = [0, 0]
         new_shelves[new_shelf_height][0] = strip.problem.boxes[id].width
         new_shelves[new_shelf_height][1] = strip.problem.boxes[id].height
+
+    return strip
 

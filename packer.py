@@ -6,12 +6,14 @@ import sys
 
 from strip import Strip, Problem
 import approximation_algorithms
+import tree_search
 
 methods = {
     'BL'  : approximation_algorithms.BL,
     'NFDH': approximation_algorithms.NFDH,
     'FFDH': approximation_algorithms.FFDH,
     'SF'  : approximation_algorithms.SF,
+    'TS'  : tree_search.run_tree_search
 }
 
 parser = argparse.ArgumentParser(
@@ -25,6 +27,7 @@ parser.add_argument(
     help='Available methods: ' + ', '.join(methods),
 )
 parser.add_argument('-p', '--print-strip', action='store_true')
+parser.add_argument('-i', '--max-iters', required=False, type=int)
 
 args = parser.parse_args()
 
@@ -34,11 +37,20 @@ else:
     with open(args.filename) as fp:
         problem = (Problem(fp))
 
-strip = Strip(problem, None)
+params = [problem]
 
-methods[args.method](strip)
+if (args.method == 'TS'):
+    if args.max_iters is None:
+        print('Tree search requires the --max-iters flag')
+        exit(1)
+    params.append(args.max_iters)
+    
+soln: Strip | None = methods[args.method](*params)
+
+if soln is None:
+    exit(1)
 
 if (args.print_strip):
-    strip.print()
+    soln.print()
 
-print(f'Height: {strip.max_height}')
+print(f'Height: {soln.max_height}')
