@@ -4,6 +4,7 @@ from strip import Strip, Problem
 import itertools
 import tqdm
 import heapq
+import math
 
 class TreeNode():
     def __init__(self, problem: Problem, placements: dict) -> None:
@@ -55,8 +56,8 @@ class TreeNode():
             for pos in self.smart_prospectives(id):
                 yield (id, pos)
     
-    def height_plus_remaining_height(self):
-        return self.strip.max_height + sum(self.strip.problem.boxes[id].height for id in self.strip.unplaced)
+    def remaining_height(self):
+        return sum(self.strip.problem.boxes[id].height for id in self.strip.unplaced)
       
     def expand(self):
         if (self.visited):
@@ -74,29 +75,27 @@ class TreeNode():
         return False
     
 class Tree():
-    def __init__(self, problem: Problem, cost_func=TreeNode.height_plus_remaining_height) -> None:
+    def __init__(self, problem: Problem, cost_func=TreeNode.remaining_height) -> None:
         self.root = TreeNode(problem, None)
 
         self.cost_func = cost_func
 
         self.visited = []
         self.complete = []
-        self.frontier = [(0, self.root)]
+        self.frontier = [(self.root.strip.max_height + self.cost_func(self.root), self.root)]
 
-    def visit_best(self) -> TreeNode | None:
+    def visit_best(self):
         cost, node = heapq.heappop(self.frontier)
 
         heapq.heappush(self.visited, (cost, node))
 
+        if (len(node.strip.unplaced) == 0):
+            heapq.heappush(self.complete, (cost, node))
+
         for child in node.expand():
-            cost = self.cost_func(child)
+            child_cost = child.strip.max_height + self.cost_func(child)
 
-            if (len(child.strip.unplaced) == 0):
-                heapq.heappush(self.complete, (cost, child))
-            else:
-                heapq.heappush(self.frontier, (cost, child))
-
-        return None
+            heapq.heappush(self.frontier, (child_cost, child))
 
     def search(self, max_iters) -> TreeNode | None:
         for _ in tqdm.tqdm(range(max_iters)):
