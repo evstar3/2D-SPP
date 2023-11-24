@@ -5,13 +5,19 @@ import itertools
 import tqdm
 import heapq
 import math
+import random
 
 class TreeNode():
-    def __init__(self, problem: Problem, placements: dict) -> None:
+    def __init__(self, parent: "TreeNode", problem: Problem, placements: dict) -> None:
+        self.parent = parent
         self.strip = Strip(problem, placements)
 
         self.visited = False
-        self.children = set()
+
+        self.playout_height = 0
+        self.playouts = 0
+
+        self.children = []
 
     def lazy_prospectives(self, box_id: int):
         '''
@@ -65,24 +71,30 @@ class TreeNode():
         
         self.visited = True
         for id, pos in self.possible_placements():
-            child_node = TreeNode(self.strip.problem, self.strip.placements)
+            child_node = TreeNode(self, self.strip.problem, self.strip.placements)
             child_node.strip.place(id, pos)
-            self.children.add(child_node)
+            self.children.append(child_node)
 
         return self.children
+
     
     def __lt__(n1: 'TreeNode', n2: 'TreeNode'):
         return False
     
-class Tree():
-    def __init__(self, problem: Problem, cost_func=TreeNode.remaining_height) -> None:
-        self.root = TreeNode(problem, None)
+    def do_playout(self):
+        copy = TreeNode(None, self.strip.problem, self.strip.placements)
+        while (copy.strip.unplaced):
+            id, pos = random.choice(list(copy.possible_placements()))
+            copy.strip.place(id, pos)
+        return copy.strip.max_height
 
-        self.cost_func = cost_func
+class Tree():
+    def __init__(self, problem: Problem) -> None:
+        self.root = TreeNode(None, problem, None)
 
         self.visited = []
         self.complete = []
-        self.frontier = [(self.root.strip.max_height + self.cost_func(self.root), self.root)]
+        self.frontier = [((self.root.strip.max_height + self.root.remaining_height()), self.root)]
 
     def visit_best(self):
         cost, node = heapq.heappop(self.frontier)
@@ -93,8 +105,7 @@ class Tree():
             heapq.heappush(self.complete, (cost, node))
 
         for child in node.expand():
-            child_cost = child.strip.max_height + self.cost_func(child)
-
+            child_cost = child.strip.max_height + child.remaining_height()
             heapq.heappush(self.frontier, (child_cost, child))
 
     def search(self, max_iters) -> TreeNode | None:
@@ -102,16 +113,35 @@ class Tree():
             self.visit_best()
 
         if (len(self.complete) == 0):
+            print(f'No solution found with {max_iters} iterations')
             return None
-        
+
         return self.complete[0][1]
 
-def run_tree_search(problem: Problem, max_iters: int) -> Strip | None:
+def run_tree_search(problem, iters):
     tree: Tree = Tree(problem)
-    soln_node: TreeNode | None = tree.search(max_iters)
-
-    if (soln_node is None):
-        print(f'No solution found with {max_iters} iterations')
+    if (tree is None):
         return None
+    return tree.search(iters).strip
 
-    return soln_node.strip
+class MCTS_Tree():
+    def __init__(self) -> "MCTS_Tree":
+        self.root = TreeNode(None, problem, None)
+
+        self.frontier = [(self.root.strip.max_height + self.cost_func(self.root), self.root)]
+
+    def search(self, rounds) -> TreeNode:
+        pass
+
+    def visit_best(self):
+        curr = self.root
+
+        while (curr.children):
+            curr = sorted(curr.children, key=lambda x: x.playout_height / x.playouts)[0]
+
+        playout_height = curr.do_playout()
+
+        while (curr):
+            curr.playouts += 1
+            curr.playout_height += playout_height
+            curr = curr.parent

@@ -13,7 +13,8 @@ methods = {
     'NFDH': approximation_algorithms.NFDH,
     'FFDH': approximation_algorithms.FFDH,
     'SF'  : approximation_algorithms.SF,
-    'TS'  : tree_search.run_tree_search
+    'TS'  : tree_search.run_tree_search,
+#    'MCTS': tree_search.run_MCTS,
 }
 
 parser = argparse.ArgumentParser(
