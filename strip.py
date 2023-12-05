@@ -26,39 +26,42 @@ class Problem:
 
 class Strip:
     def __init__(self, problem: Problem, init_placements: None) -> None:
-        self.problem = problem
-        self.max_height = 0
+        self.total_height = 0
 
         self.placements = {}
-        self.unplaced = [id for id in range(self.problem.n_boxes)]
+        self.unplaced = [id for id in range(problem.n_boxes)]
+
+        self.n_boxes = problem.n_boxes 
+        self.width = problem.width 
+        self.boxes = problem.boxes 
+        self.max_height = problem.max_height 
 
         if (init_placements):
             for id, (x, y) in init_placements.items():
                 self.place(id, (x, y))
 
-
     def clear_placements(self):
         self.placements = {}
-        self.unplaced = [id for id in range(self.problem.n_boxes)]
+        self.unplaced = [id for id in range(self.n_boxes)]
 
     def would_touch_edge(self, box_id: int, pos: tuple[int, int]) -> bool:
         x, y = pos
         if (x == 0 or y == 0):
             return True
         
-        return x + self.problem.boxes[box_id].width == self.problem.width
+        return x + self.boxes[box_id].width == self.width
     
     def are_touching(self, placed_id: int, test_id: int, test_pos: tuple[int, int]) -> bool:
-        if (not self.placements[placed_id]):
-            raise RuntimeError(f'Box placed_id={placed_id} is not placed')
+        # if (not self.placements[placed_id]):
+            # raise RuntimeError(f'Box placed_id={placed_id} is not placed')
                         
         placed_x, placed_y = self.placements[placed_id]
-        placed_w = self.problem.boxes[placed_id].width
-        placed_h = self.problem.boxes[placed_id].height
+        placed_w = self.boxes[placed_id].width
+        placed_h = self.boxes[placed_id].height
 
         test_x, test_y = test_pos
-        test_w = self.problem.boxes[test_id].width
-        test_h = self.problem.boxes[test_id].height
+        test_w = self.boxes[test_id].width
+        test_h = self.boxes[test_id].height
 
         # right edge
         if (test_x == placed_x + placed_w):
@@ -90,9 +93,6 @@ class Strip:
         return False
 
     def _merge_border_chars(c1: str, c2: str) -> str:
-        if (len(c1) != 1 or len(c2) != 1):
-            raise RuntimeError(f'_merge_border expects two box drawing characters')
-        
         # TODO: get add remaining characters to map
         map = {
         #              ┘        ┌        ┐        ─        │
@@ -123,7 +123,7 @@ class Strip:
         return map[c1][c2]
 
     def print(self) -> None:
-        grid = np.full((self.problem.width + 1, self.problem.max_height + 1), '·')
+        grid = np.full((self.width + 1, self.max_height + 1), '·')
     
         for id, pos in self.placements.items():
             if not pos:
@@ -131,8 +131,8 @@ class Strip:
 
             x, y = pos
 
-            w = self.problem.boxes[id].width
-            h = self.problem.boxes[id].height
+            w = self.boxes[id].width
+            h = self.boxes[id].height
 
             # clear box
             grid[x : x + w, y : y + h] = ' '
@@ -174,40 +174,43 @@ class Strip:
         if box_id in self.placements:
             return False
         
-        box = self.problem.boxes[box_id]
+        box = self.boxes[box_id]
         x, y = pos
 
         if x < 0 or y < 0:
             return False
         
-        if x + box.width > self.problem.width:
+        if x + box.width > self.width:
             return False
 
-        if y + box.height > self.problem.max_height:
+        if y + box.height > self.max_height:
             return False
         
         for b2, pos2 in self.placements.items():
-            if (Strip.is_collision(box, pos, self.problem.boxes[b2], pos2)):
+            if (Strip.is_collision(box, pos, self.boxes[b2], pos2)):
                 return False
         
         return True
 
     def place(self, box_id: int, pos: tuple[int, int]):
-        if (box_id in self.placements):
-            raise RuntimeError(f'Box(id={box_id}) already placed')
-        
-        is_valid = self.is_valid_placement(box_id, pos)
-        if (not is_valid):
-            raise RuntimeError('invalid placement')
+        # These are sanity checks... only remove when you're SURE your algorithm works
+        # if (box_id in self.placements):
+            # raise RuntimeError(f'Box(id={box_id}) already placed')
+        # 
+        # is_valid = self.is_valid_placement(box_id, pos)
+        # if (not is_valid):
+            # raise RuntimeError('invalid placement')
         
         self.unplaced.remove(box_id)        
         self.placements[box_id] = pos
 
-        new_height = pos[1] + self.problem.boxes[box_id].height
-        if (new_height > self.max_height):
-            self.max_height = new_height
+        new_height = pos[1] + self.boxes[box_id].height
+        if (new_height > self.total_height):
+            self.total_height = new_height
     
     def total_area(self):
-        return sum(self.problem.boxes[id].area for id in self.placements)
+        return sum(self.boxes[id].area for id in self.placements)
 
+    def __lt__(s1, s2):
+        return False
 
