@@ -7,16 +7,19 @@ import heapq
 import math
 import random
 import datetime
+import sys
+import functools
 
 class TreeNode():
     def __init__(self, parent: "TreeNode", problem: Problem, placements: dict) -> None:
         self.parent = parent
         self.strip = Strip(problem, placements)
 
+        self.children = None
+
         # used for MCTS
-        self.unvisited_children = None
-        self.visited_children = None
-        self.playout_height = 0
+        self.child_generator = None
+        self.wins = 0
         self.playouts = 0
 
     def lazy_prospectives(self, box_id: int):
@@ -56,7 +59,7 @@ class TreeNode():
         else:
             yield from (pos for pos in self.lazy_prospectives(box_id)
                         if self.strip.would_touch_other_box(box_id, pos))
-    
+
     def possible_placements(self):
         for id in self.strip.unplaced:
             for pos in self.smart_prospectives(id):
@@ -65,21 +68,18 @@ class TreeNode():
     def remaining_height(self):
         return sum(self.strip.boxes[id].height for id in self.strip.unplaced)
       
-    def expand(self):
-        if (self.unvisited_children):
-            raise RuntimeError('node already expanded')
-        
-        self.unvisited_children = []
-        self.visited_children = []
+    def expand(self):        
+        if (self.children is None):
+            self.children = []
+        else:
+            raise RuntimeError
 
         for id, pos in self.possible_placements():
             child_node = TreeNode(self, self.strip, self.strip.placements)
             child_node.strip.place(id, pos)
-            self.unvisited_children.append(child_node)
+            self.children.append(child_node)
+            yield child_node
 
-        return self.unvisited_children
-
-    
     def __lt__(n1: 'TreeNode', n2: 'TreeNode'):
         return False
     
@@ -116,74 +116,53 @@ class Tree():
 class MCTS():
     def __init__(self, problem: Problem):
         self.root = TreeNode(None, problem, None)
-        self.root.expand()
-
-        self.exploration_factor = problem.max_height * 0.5
+        self.exploration_factor = 1
         
     def search(self, timeout=datetime.timedelta(seconds=2)) -> TreeNode:
         node = self.root
         while (node.strip.unplaced):
             print(f'placing box {len(node.strip.placements)}/{self.root.strip.n_boxes}...')
 
+            sample_size = 5
+            avg = sum(MCTS.do_playout(node.strip).total_height for _ in range(sample_size)) / sample_size
+
             start = datetime.datetime.now()
             while (datetime.datetime.now() < start + timeout):
-                self.MC_round(node)
-
-            print(len(node.unvisited_children))
-            nodes = sorted(node.visited_children, key=lambda x: x.playouts, reverse=True)
-            print([n.playouts for n in nodes])
-            node = nodes[0]
+                self.MC_round(node, avg)
+            
+            # print([n.playouts for n in node.children])
+            node = sorted(node.children, key=lambda x: (x.playouts, -x.strip.total_height), reverse=True)[0]
         
         return node.strip
 
-    def MC_round(self, root):
-        # generate children if node has not been expanded
-        if (root.unvisited_children is None):
-            root.expand()
-
+    def MC_round(self, root, avg):
         curr = root
 
         # selection
-        while not curr.unvisited_children:
-            if (not curr.visited_children):
-                return
-
-            curr_score = self.exploration_score(curr)
-            child_score, child = sorted(((self.exploration_score(child), child) for child in curr.visited_children), reverse=True)[0]
-            if (child_score > curr_score):
-                curr = child
-            else:
+        while curr.strip.unplaced:
+            try:
+                if (not curr.child_generator):
+                    curr.child_generator = curr.expand()
+                curr = next(curr.child_generator)
                 break
-
-        if (curr.unvisited_children):
-            curr = random.choice(curr.unvisited_children)
+            except StopIteration:
+                curr = sorted(curr.children, key=self.exploration_score, reverse=True)[0]
 
         # simulation
         strip = MCTS.do_playout(curr.strip)
-        playout_height = strip.total_height
-        if (curr.parent and curr in curr.parent.unvisited_children):
-            curr.parent.visited_children.append(curr)
-            curr.parent.unvisited_children.remove(curr)
+        isWin = 1 if strip.total_height < avg else 0
 
         # backpropagation
         while (curr):
             curr.playouts += 1
-            curr.playout_height += playout_height
+            curr.wins += isWin
             curr = curr.parent
 
     def do_playout(strip: Strip):
         cop = TreeNode(None, strip, strip.placements)
         while (cop.strip.unplaced):
-            id = random.choice(cop.strip.unplaced)
-
-            x = random.randint(0, cop.strip.width - 1)
-            y = random.randint(0, cop.strip.max_height - 1)
-            while (not cop.strip.is_valid_placement(id, (x, y))):
-                x = random.randint(0, cop.strip.width - 1)
-                y = random.randint(0, cop.strip.max_height - 1)
-
-            cop.strip.place(id, (x, y))
-            break
+            id, pos = random.choice(list(cop.possible_placements()))
+            cop.strip.place(id, pos)
         return cop.strip
 
     def exploration_score(self, node: TreeNode):
@@ -192,12 +171,12 @@ class MCTS():
         during MCTS. This allows MCTS to balance deep exploration of good paths vs. new
         exploration.
         '''
-        avg_playout_height = node.playout_height / node.playouts
-        
+        winrate = node.wins / node.playouts
+
         if (node.parent):
             ignored_factor = math.sqrt(math.log2(node.parent.playouts) / node.playouts)
         else:
             ignored_factor = math.inf
 
-        return -avg_playout_height + self.exploration_factor * ignored_factor
+        return winrate + self.exploration_factor * ignored_factor
 

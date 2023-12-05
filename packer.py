@@ -14,7 +14,7 @@ methods = {
     'FFDH': approximation_algorithms.FFDH,
     'SF'  : approximation_algorithms.SF,
     'TS'  : lambda problem, rounds: tree_search.Tree(problem).search(rounds),
-    # 'MCTS': lambda problem: tree_search.MCTS(problem).search(), # sunken cost fallacy
+    'MCTS': lambda problem: tree_search.MCTS(problem).search(), # sunken cost fallacy
     'GEN' : genetic.run
 }
 
