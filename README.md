@@ -91,7 +91,7 @@ In this genetic algorithm, the population is a list of *orders*, and we create *
 For each generation, the top 50% are kept for the next generation. The rest of the generation is made up of mutations of those same top 50%.
 
 Notes:
-- you may specify the number of gnerations, the generation size, and the number of swaps to do per mutation
+- you may specify the number of generations, the generation size, the number of swaps to do per mutation, and the number of cores to use for running generations in parallel
 - this algorithm is capable of producing the best results out of all the algorithms I've implemented, sometimes even finding perfect solutions (i.e. solutions with no wasted space)
 
 ## Project Evolution
