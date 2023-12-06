@@ -5,7 +5,7 @@ The code and data for this project exist in [this GitHub repository](https://git
 
 ## Overview
 One canonical problem in math and computer science is *packing.*
-This repository examines a specific subset of rectangular packing called **strip packing**, where the goal is to fit a set of rectangles into a 'strip' of fixes width while minimizing height.
+This repository examines a specific subset of rectangular packing called **strip packing**, where the goal is to fit a set of rectangles into a 'strip' of fixed width while minimizing height.
 
 ## Repository Structure
 ```
