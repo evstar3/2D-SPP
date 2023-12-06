@@ -57,6 +57,7 @@ class TreeNode():
         if (len(self.strip.placements) == 0):
             yield (0,0)
         else:
+            # TODO: generate these from the boxes... probably will be much faster
             yield from (pos for pos in self.lazy_prospectives(box_id)
                         if self.strip.would_touch_other_box(box_id, pos))
 
