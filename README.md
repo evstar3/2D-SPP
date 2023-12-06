@@ -51,11 +51,20 @@ The algorithm is similar to A* where the current cost is the height of the strip
 
 Notes:
 - the hueristic function intentionally overestimates because an underestimating hueristic would search a majority of the tree and take a *long* time to finish
+- the algorithm suffers from poor performance because expanded each node takes a long time. There are thousands of possible placements for each box, even after making assumptions about optimal locations. I recommend running with <30 boxes for usable results
 ### MCTS
 **MCTS** is an acronym for Monte Carlo Tree Search
 This algorithm performs random playouts from the current position to determine which action to take.
 
 Notes: 
 - you may supply a timeout for each round of MCTS
+- the algorithm suffers from poor performance because each random playout takes a long time. I recommend running with <30 boxes for usable results
 ### GEN
+This is a genetic algorithm that relies on the Bottom-up Left-justified algorithm.
+In this genetic algorithm, the population is a list of *orders*, and we create *mutations* by swapping boxes in the order.
+For each generation, the top 50% are kept for the next generation. The rest of the generation is made up of mutations of those same top 50%.
+
+Notes:
+- you may specify the number of gnerations, the generation size, and the number of swaps to do per mutation
+- this algorithm is capable of producing the best results out of all the algorithms I've implemented, sometimes even finding perfect solutions (i.e. solutions with no wasted space)
 
