@@ -13,7 +13,7 @@ This repository examines a specific subset of rectangular packing called **strip
 ├── approximation_algorithms.py     # contains multiple polynomial approximation algorithms
 ├── data                            # contains the data for the project
 │   ├── BKW
-│   ├── by_size                     # all the datasets, ordered by the numbmer of boxes
+│   ├── by_size                     # all the datasets, ordered by the number of boxes
 │   ├── C
 │   ├── N_T
 │   └── ZDF
