@@ -59,14 +59,15 @@ class Generation():
     def run_single(self, order):
         return order, BL(self.problem, order=order).total_height
 
-def run(problem, n_generations=15, generation_size=40):
+def run(problem, generations=15, generation_size=40, mutation_rate=2):
     gen_best_height = []
 
-    print(f'{n_generations=}')
+    print(f'{generations=}')
     print(f'{generation_size=}')
+    print(f'{mutation_rate=}')
 
     gen = Generation(problem, generation_size, None)
-    for g in range(n_generations):
+    for g in range(generations):
         print(f'Generation {g}:')
 
         start = time.time()
@@ -79,7 +80,7 @@ def run(problem, n_generations=15, generation_size=40):
         print(f'\tBest:    {best[0].score}')
         print(f'\tCutoff:  {best[-1].score}')
 
-        gen = Generation(problem, generation_size, ran=best, to_run=[b.mutate(5) for b in best])
+        gen = Generation(problem, generation_size, ran=best, to_run=[b.mutate(mutation_rate) for b in best])
 
     return BL(problem, order=best[0].order)
 

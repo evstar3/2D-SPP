@@ -28,24 +28,30 @@ parser.add_argument(
     'method',
     help='available methods: ' + ', '.join(methods),
 )
-parser.add_argument('-p', '--print-strip', action='store_true')
+parser.add_argument('-p', '--print-strip', action='store_true', help='prints a visualization of the final packed strip')
 parser.add_argument(
     '--rounds',
     required=False,
     type=int,
-    help='number of rounds to perform. required for tree search'
+    help='number of rounds to perform'
 )
 parser.add_argument(
-    '--n-generations',
+    '--generations',
     required=False,
     type=int,
-    help='number of generations to run. required for genetic algorithm'
+    help='number of generations to run'
 )
 parser.add_argument(
     '--generation-size',
     required=False,
     type=int,
-    help='size of generations. required for genetic algorithm'
+    help='size of generations'
+)
+parser.add_argument(
+    '--mutation-rate',
+    required=False,
+    type=int,
+    help='number of swaps to perform for a single mutation'
 )
 
 args = parser.parse_args()
@@ -62,10 +68,12 @@ if (args.method == 'TS'):
     if args.rounds:
         kwargs['rounds'] = args.rounds
 elif (args.method == 'GEN'):
-    if (args.n_generations):
-        kwargs['n_generations'] = args.n_generations
+    if (args.generations):
+        kwargs['generations'] = args.generations
     if (args.generation_size):
         kwargs['generation_size'] = args.generation_size
+    if (args.mutation_rate):
+        kwargs['mutation_rate'] = args.mutation_rate
     
 soln: Strip | None = methods[args.method](problem, **kwargs)
 assert(len(soln.unplaced) == 0)
