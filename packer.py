@@ -33,25 +33,31 @@ parser.add_argument(
     '--rounds',
     required=False,
     type=int,
-    help='number of rounds to perform'
+    help='number of rounds to perform in tree search'
 )
 parser.add_argument(
     '--generations',
     required=False,
     type=int,
-    help='number of generations to run'
+    help='number of generations to run in the genetic algorithm'
 )
 parser.add_argument(
     '--generation-size',
     required=False,
     type=int,
-    help='size of generations'
+    help='size of generations in the genetic algorithm'
 )
 parser.add_argument(
     '--mutation-rate',
     required=False,
     type=int,
-    help='number of swaps to perform for a single mutation'
+    help='number of swaps to perform for a single mutation in the genetic algorithm'
+)
+parser.add_argument(
+    '--timeout',
+    required=False,
+    type=int,
+    help='timeout for each box placement in MCTS'
 )
 
 args = parser.parse_args()
@@ -62,19 +68,15 @@ else:
     with open(args.filename) as fp:
         problem = Problem(fp)
 
-kwargs = {}
+possible_arguments = [
+    'rounds',
+    'generations',
+    'generation_size',
+    'mutation_rate',
+    'timeout',
+]
+kwargs = {k: v for k, v in vars(args).items() if v and k in possible_arguments}
 
-if (args.method == 'TS'):
-    if args.rounds:
-        kwargs['rounds'] = args.rounds
-elif (args.method == 'GEN'):
-    if (args.generations):
-        kwargs['generations'] = args.generations
-    if (args.generation_size):
-        kwargs['generation_size'] = args.generation_size
-    if (args.mutation_rate):
-        kwargs['mutation_rate'] = args.mutation_rate
-    
 soln: Strip | None = methods[args.method](problem, **kwargs)
 assert(len(soln.unplaced) == 0)
 

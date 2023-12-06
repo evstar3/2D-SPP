@@ -117,7 +117,7 @@ class MCTS():
         self.root = TreeNode(None, problem, None)
         self.exploration_factor = 1
         
-    def search(self, timeout=datetime.timedelta(seconds=2)) -> TreeNode:
+    def search(self, timeout) -> TreeNode:
         node = self.root
         while (node.strip.unplaced):
             print(f'placing box {len(node.strip.placements) + 1}/{self.root.strip.n_boxes}...')
@@ -126,7 +126,7 @@ class MCTS():
             avg = sum(MCTS.do_playout(node.strip).total_height for _ in range(sample_size)) / sample_size
 
             start = datetime.datetime.now()
-            while (datetime.datetime.now() < start + timeout):
+            while (datetime.datetime.now() < start + datetime.timedelta(seconds=timeout)):
                 self.MC_round(node, avg)
             
             print([n.playouts for n in node.children])
@@ -183,5 +183,8 @@ class MCTS():
 def run_tree_search(problem, rounds=100):
     return Tree(problem).search(rounds)
 
-def run_MCTS(problem):
-    return MCTS(problem).search()
+def run_MCTS(problem, timeout=2):
+    print(f'{timeout=}')
+    return MCTS(problem).search(timeout)
+
+
