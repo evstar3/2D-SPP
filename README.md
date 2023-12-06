@@ -29,7 +29,7 @@ usage: packer.py [-h] [-p] [--rounds ROUNDS] [--generations GENERATIONS]
                  [--mutation-rate MUTATION_RATE] [--timeout TIMEOUT]
                  filename method
 
-An interface for 2D-SPP problems
+An interface for 2D strip-packing problems
 
 positional arguments:
   filename

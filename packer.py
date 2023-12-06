@@ -20,7 +20,7 @@ methods = {
 
 parser = argparse.ArgumentParser(
     prog='packer.py',
-    description='An interface for 2D-SPP problems',
+    description='An interface for 2D strip-packing problems',
 )
 
 parser.add_argument('filename')
