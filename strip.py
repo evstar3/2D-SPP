@@ -44,75 +44,54 @@ class Strip:
         self.placements = {}
         self.unplaced = [id for id in range(self.n_boxes)]
 
-    def _merge_border_chars(c1: str, c2: str) -> str:
-        # TODO: get add remaining characters to map
-        map = {
-        #              ┘        ┌        ┐        ─        │
-            '└': {'┘':'┴', '┌':'├', '┐':'┼', '─':'┴', '│':'├'},
-            '┘':          {'┌':'┼', '┐':'┤', '─':'┴', '│':'┤'},
-            '┌':                   {'┐':'┬', '─':'┬', '│':'├'},
-            '┐':                            {'─':'┬', '│':'┤'},
-            '─':                                     {'│':'┼'},
-            '│':                                            {},
-        }
-
-        for x, arr in map.items():
-            for y, z in arr.items():
-                map[y][x] = z
-
-        if (c1 == c2):
-            return c1
-        
-        if (c1 == '┼' or c2 == '┼'):
-            return '┼'
-        
-        if (c1 in ('·', ' ')):
-            return c2
-        
-        if (c2 in ('·', ' ')):
-            return c1
-        
-        return map[c1][c2]
-
     def print(self) -> None:
-        grid = np.full((self.width + 1, self.max_height + 1), '·')
-    
-        for id, pos in self.placements.items():
-            if not pos:
-                continue
+        grid = np.full((self.width, self.max_height), None)
 
-            x, y = pos
-
+        for id, (x, y) in self.placements.items():
             w = self.boxes[id].width
             h = self.boxes[id].height
 
-            # clear box
-            grid[x : x + w, y : y + h] = ' '
+            grid[x : x + w, y : y + h] = id
 
-            # set box horizontal lines
-            grid[x : x + w, y    ] = '─'
-            grid[x : x + w, y + h] = '─' 
+        for r in map(lambda j: grid.shape[1] - j - 1, range(1, grid.shape[1] - 1)):
+            for c in range(1, grid.shape[0] + 1):
+                in_bounds = lambda c, r: c > 0 and c < grid.shape[0] and r > 0 and r < grid.shape[1]
 
-            # set box vertical lines
-            grid[x,     y : y + h] = '│'
-            grid[x + w, y : y + h] = '│'
+                tl = grid[c-1, r  ] if in_bounds(c-1, r  ) else None
+                tr = grid[c,   r  ] if in_bounds(c,   r  ) else None
+                bl = grid[c-1, r-1] if in_bounds(c-1, r-1) else None
+                br = grid[c,   r-1] if in_bounds(c,   r-1) else None
 
-            # set box corners
-            grid[x    , y    ] = '└'
-            grid[x + w, y    ] = '┘'
-            grid[x    , y + h] = '┌'
-            grid[x + w, y + h] = '┐'
+                #   ┌ ├ ┐ ┼  ├
 
-        for c in range(grid.shape[1]):
-            for r in range(grid.shape[0]):
-                char = grid[r][grid.shape[1] - c - 1]
+                char = '· '
 
-                if (char in ['┌','└','─']):
-                    end = '─'
-                else:
-                    end = ' '
+                if bl == tl == br == tr and bl is not None:
+                    char = '  '
+                elif bl == br and tl == tr and bl != tl:
+                    char = '──' 
+                elif tr == br and tl == bl and tr != tl:
+                    char = '│ '
+                elif bl == tl == br and bl != tr:
+                    char = '└─'
+                elif bl == br == tr and tr != tl:
+                    char = '┘ '
+                elif tl == tr == bl and br != bl:
+                    char = '┌─' 
+                elif tl == tr == br and bl != br:
+                    char = '┐ '
+                elif bl == br and tr != tl:
+                    char = '┴─'
+                elif tl == tr and bl != br:
+                    char = '┬─'
+                elif bl == tl and br != tr:
+                    char = '├─'
+                elif br == tr and bl != tl:
+                    char = '┤ '
+                elif br != tr != tl != bl:
+                    char = '┼─'
 
-                print(char, end=end)
+                print(char, end='')
             print()
 
     def is_collision(b1: Box, pos1: tuple[int, int], b2: Box, pos2: tuple[int, int]):
