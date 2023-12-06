@@ -75,7 +75,7 @@ These sets are placed using FFDH, but the algorithm also sorts the shelves so as
 **TS** is an acronym for Tree Search.
 This algorithm creates a search tree where an action represents placing a certain box at a certain position.
 This version of tree search requires the `--rounds` flag, which determines how many tree nodes the algorithm should explore.
-The algorithm is similar to A* where the current cost is the height of the strip and the hueristic function is the total height of all the yet unplaced boxes.
+The algorithm is similar to A* where the current cost is the height of the strip and the hueristic function is the total height of all the yet-unplaced boxes.
 
 Notes:
 - the hueristic function intentionally overestimates because an underestimating hueristic would search a majority of the tree and take a *very long* time to finish
@@ -94,14 +94,14 @@ For each generation, the top 50% are kept for the next generation. The rest of t
 
 Notes:
 - you may specify the number of generations, the generation size, the number of swaps to do per mutation, and the number of cores to use for running generations in parallel
-- this algorithm is capable of producing the best results out of all the algorithms I've implemented, sometimes even finding perfect solutions (i.e. solutions with no wasted space)
+- this algorithm is capable of producing the best results out of all the algorithms I've implemented, sometimes even finding perfect solutions (i.e., solutions with no wasted space)
 
 ## Project Evolution
 The project I have completed differs from my original proposal. Here is an excerpt from my project proposal:
 
-> My solutions to this problem would look into tree search, possibly with Monte Carlo Tree Search since the branching factor is huge when the number of objects is non-trivial. I have also considered deep-learning techniques for this problem, and it would be interesting to see how neural networks compare to traditional search algorithms. To add complexity to the project, I may explore the effect of rotations or non-rectangular objects on the packing efficiency.
+> My solutions to this problem would look into tree search, possibly with Monte Carlo Tree Search since the branching factor is huge when the number of objects is non-trivial. I have also considered deep-learning techniques for this problem, and it would be interesting to see how neural networks compare to traditional search algorithms. To add complexity to the project, I may explore the effect of rotations or non-rectangular objects on packing efficiency.
 
-I decided not to pursue any machine learning techniques because of a few complications, most notably a lack of training data and computing power. After seeing the sheer size of the search trees produced for these problems, I also decided not to consider rotations as this would effectively double that. I also ruled-out non-rectangular objects since the collision detection would because considerably more complicated, leading to even further increased runtimes.
+I decided not to pursue any machine learning techniques because of a few complications, most notably a lack of training data and computing power. After seeing the sheer size of the search trees produced for these problems, I also decided not to consider rotations as this would effectively double that. I also ruled out non-rectangular objects since the collision detection would because considerably more complicated, leading to even further increased runtimes.
 
 One aspect of my final project that is not in my initial proposal is the genetic algorithm. I am glad that I pursued this approach rather than neural networks because it is efficient and produces excellent results.
 
