@@ -13,9 +13,9 @@ methods = {
     'NFDH': approximation_algorithms.NFDH,
     'FFDH': approximation_algorithms.FFDH,
     'SF'  : approximation_algorithms.SF,
-    'TS'  : lambda problem, rounds: tree_search.Tree(problem).search(rounds),
-    'MCTS': lambda problem: tree_search.MCTS(problem).search(), # sunken cost fallacy
-    'GEN' : genetic.run
+    'TS'  : tree_search.run_tree_search,
+    'MCTS': tree_search.run_MCTS,
+    'GEN' : genetic.run,
 }
 
 parser = argparse.ArgumentParser(
@@ -30,11 +30,22 @@ parser.add_argument(
 )
 parser.add_argument('-p', '--print-strip', action='store_true')
 parser.add_argument(
-    '-r',
     '--rounds',
     required=False,
     type=int,
-    help='number of rounds to perform. required for tree search and MCTS'
+    help='number of rounds to perform. required for tree search'
+)
+parser.add_argument(
+    '--n-generations',
+    required=False,
+    type=int,
+    help='number of generations to run. required for genetic algorithm'
+)
+parser.add_argument(
+    '--generation-size',
+    required=False,
+    type=int,
+    help='size of generations. required for genetic algorithm'
 )
 
 args = parser.parse_args()
@@ -45,15 +56,19 @@ else:
     with open(args.filename) as fp:
         problem = Problem(fp)
 
-params = [problem]
+kwargs = {}
 
-if (args.method in ['TS']):
-    if args.rounds is None:
-        print('Tree search requires the --rounds flag')
-        exit(1)
-    params.append(args.rounds)
+if (args.method == 'TS'):
+    if args.rounds:
+        kwargs['rounds'] = args.rounds
+elif (args.method == 'GEN'):
+    if (args.n_generations):
+        kwargs['n_generations'] = args.n_generations
+    if (args.generation_size):
+        kwargs['generation_size'] = args.generation_size
     
-soln: Strip | None = methods[args.method](*params)
+soln: Strip | None = methods[args.method](problem, **kwargs)
+assert(len(soln.unplaced) == 0)
 
 if soln is None:
     exit(1)

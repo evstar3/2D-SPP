@@ -3,62 +3,84 @@
 import concurrent.futures
 from approximation_algorithms import BL
 import random
-import tqdm
+import copy
+import time
+
+class Individual():
+    def __init__(self, order, score):
+        self.order = order
+        self.score = score
+
+    def mutate(self, N):
+        '''
+        Makes a copy of the order and swaps two boxes N times
+        '''
+        cop = copy.deepcopy(self.order)
+        for _ in range(N):
+            i1 = random.randint(0, len(cop) - 1)
+            i2 = random.randint(0, len(cop) - 1)
+
+            while i1 == i2:
+                i2 = random.randint(0, len(cop) - 1)
+
+            cop[i1], cop[i2] = cop[i2], cop[i1]
+
+        return cop
+
+    def __lt__(i1, i2):
+        return i1.score < i2.score
 
 class Generation():
-    def __init__(self, problem, size, individuals=None):
+    def __init__(self, problem, size, ran=None, to_run=None):
         self.problem = problem
         self.size = size
 
-        if individuals is not None:
-            self.individuals = individuals
+        if ran is None:
+            self.ran = []
         else:
-            self.individuals = [self.random_order() for _ in range(self.size)]
+            self.ran = ran
 
+        if to_run is None:
+            self.to_run = [self.random_order() for _ in range(size - len(self.ran))]
+        else:
+            self.to_run = to_run
 
     def random_order(self):
-        return random.sample(range(self.problem.n_boxes), k=self.problem.n_boxes)
+        return random.sample(list(range(self.problem.n_boxes)), k=self.problem.n_boxes)
 
-    def run(self, cores=16):
+    def _run(self, cores):
         with concurrent.futures.ProcessPoolExecutor(max_workers=cores) as executor:
-            yield from executor.map(self.run_single, self.individuals, chunksize=max(1, len(self.individuals) // cores))
+            yield from executor.map(self.run_single, self.to_run, chunksize=max(1, len(self.to_run) // cores))
+
+    def run_and_update(self, cores=16):
+        for order, score in self._run(cores):
+            self.ran.append(Individual(order, score))
 
     def run_single(self, order):
-        return BL(self.problem, order=order).total_height, order
+        return order, BL(self.problem, order=order).total_height
 
-def mutate(order):
-    cop = [n for n in order]
-
-    i1 = random.randint(0, len(order) - 1)
-    i2 = random.randint(0, len(order) - 1)
-
-    while i1 == i2:
-        i2 = random.randint(0, len(order) - 1)
-
-    cop[i1], cop[i2] = cop[i2], cop[i1]
-
-    return cop
-
-def run(problem):
-    GENERATIONS = 20
-    SIZE = 40
-
+def run(problem, n_generations=15, generation_size=40):
     gen_best_height = []
 
-    gen = Generation(problem, SIZE, None)
-    for g in tqdm.tqdm(range(GENERATIONS)):
-        ranked = sorted(list(gen.run()))
+    print(f'{n_generations=}')
+    print(f'{generation_size=}')
 
-        best = ranked[:SIZE // 2]
+    gen = Generation(problem, generation_size, None)
+    for g in range(n_generations):
+        print(f'Generation {g}:')
 
-        gen_best_height.append(best[0][0])
+        start = time.time()
+        gen.run_and_update()
+        runtime = time.time() - start
 
-        mutations = [mutate(ord) for height, ord in best]
+        best = sorted(gen.ran)[:generation_size // 2]
 
-        gen = Generation(problem, SIZE, [ord for height, ord in best] + mutations)
+        print(f'\tRuntime: {runtime:.2f} seconds')
+        print(f'\tBest:    {best[0].score}')
+        print(f'\tCutoff:  {best[-1].score}')
 
-    print(gen_best_height)
+        gen = Generation(problem, generation_size, ran=best, to_run=[b.mutate(5) for b in best])
 
-    return BL(problem, order=best[0][1])
+    return BL(problem, order=best[0].order)
 
 

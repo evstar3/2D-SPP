@@ -44,54 +44,6 @@ class Strip:
         self.placements = {}
         self.unplaced = [id for id in range(self.n_boxes)]
 
-    def would_touch_edge(self, box_id: int, pos: tuple[int, int]) -> bool:
-        x, y = pos
-        if (x == 0 or y == 0):
-            return True
-        
-        return x + self.boxes[box_id].width == self.width
-    
-    def are_touching(self, placed_id: int, test_id: int, test_pos: tuple[int, int]) -> bool:
-        # if (not self.placements[placed_id]):
-            # raise RuntimeError(f'Box placed_id={placed_id} is not placed')
-                        
-        placed_x, placed_y = self.placements[placed_id]
-        placed_w = self.boxes[placed_id].width
-        placed_h = self.boxes[placed_id].height
-
-        test_x, test_y = test_pos
-        test_w = self.boxes[test_id].width
-        test_h = self.boxes[test_id].height
-
-        # right edge
-        if (test_x == placed_x + placed_w):
-            if (test_y + test_h >= placed_y and test_y <= placed_y + placed_h):
-                return True
-            
-        # top edge
-        if (test_y == placed_y + placed_h):
-            if (test_x + test_w >= placed_x and test_x <= placed_x + placed_w):
-                return True
-        
-        # left edge
-        if (test_x + test_w == placed_x):
-            if (test_y + test_h >= placed_y and test_y <= placed_y + placed_h):
-                return True
-
-        # bottom edge
-        if (test_y + test_h == placed_y):
-            if (test_x + test_w >= placed_x and test_x <= placed_x + placed_w):
-                return True
-
-        return False
-    
-    def would_touch_other_box(self, box_id: int, pos: tuple[int, int]) -> bool:
-        for placed_id in self.placements:
-            if self.are_touching(placed_id, box_id, pos):
-                return True
-            
-        return False
-
     def _merge_border_chars(c1: str, c2: str) -> str:
         # TODO: get add remaining characters to map
         map = {

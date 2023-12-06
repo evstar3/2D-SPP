@@ -8,14 +8,12 @@ def BL(problem: Problem, order=None) -> Strip:
     '''Bottom-up left-justified'''
     strip = Strip(problem, None)
 
-    if order is not None:
-        order = copy.deepcopy(order)
-    else:
+    if order is None:
         order = random.sample(strip.unplaced, k = len(strip.unplaced))
-
     
-    while (order):
-        id = order.pop()
+    i = 0
+    while i < len(order):
+        id = order[i]
         x = 0
         y = 0
 
@@ -26,6 +24,7 @@ def BL(problem: Problem, order=None) -> Strip:
                 y += 1
 
         strip.place(id, (x, y))
+        i += 1
 
     return strip
 

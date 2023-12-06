@@ -22,27 +22,6 @@ class TreeNode():
         self.wins = 0
         self.playouts = 0
 
-    def lazy_prospectives(self, box_id: int):
-        '''
-        Return every location less than (max height + 1) in the
-        strip where the box could be legally placed.
-
-        Returns a generator of (x, y) tuples
-        '''
-
-        if (box_id in self.strip.placements):
-            yield
-        else:
-            box = self.strip.boxes[box_id]
-            yield from (
-                pos for pos in
-                    itertools.product(
-                        range(self.strip.width - box.width + 1),
-                        range(self.strip.max_height + 1)
-                    )
-                if self.strip.is_valid_placement(box_id, pos)
-            )
-    
     def smart_prospectives(self, box_id: int):
         '''
         Makes some assumptions about prospective placements to
@@ -54,25 +33,31 @@ class TreeNode():
 
         Returns a generator of (x, y) tuples
         '''
+        if (box_id in self.strip.placements):
+            raise RuntimeError
+
         if (len(self.strip.placements) == 0):
-            pass
-            # yield (0,0)
+            yield (0,0)
         else:
-            # TODO: generate these from the placed boxes... probably will be much faster
+            test_box = self.strip.boxes[box_id]
             for id, (x, y) in self.strip.placements.items():
-                left_edge = x - 1
-                right_edge = x + self.strip.boxes[id].width
-                bottom_edge = y - 1
-                top_edge = y + self.strip.boxes[id].height
+                box = self.strip.boxes[id]
+
+                left_edge = x - test_box.width
+                right_edge = x + box.width
+                bottom_edge = y - test_box.height
+                top_edge = y + box.height
 
                 locs = set(itertools.chain(
-                    ((left_edge, y) for y in range(bottom_edge, top_edge + 1)),
-                    ((right_edge, y) for y in range(bottom_edge, top_edge + 1)),
-                    ((x, bottom_edge) for x in range(left_edge, right_edge + 1)),
-                    ((x, top_edge) for x in range(left_edge, right_edge + 1)),
+                    ((right_edge, t) for t in range(bottom_edge, top_edge + 1)),
+                    ((left_edge, t) for t in range(bottom_edge, top_edge + 1)),
+                    ((t, bottom_edge) for t in range(left_edge, right_edge + 1)),
+                    ((t, top_edge) for t in range(left_edge, right_edge + 1)),
                 ))
 
-                print(sorted(list(locs)))
+                for loc in locs:
+                    if (self.strip.is_valid_placement(box_id, loc)):
+                        yield loc
 
     def possible_placements(self):
         for id in self.strip.unplaced:
@@ -135,7 +120,7 @@ class MCTS():
     def search(self, timeout=datetime.timedelta(seconds=2)) -> TreeNode:
         node = self.root
         while (node.strip.unplaced):
-            print(f'placing box {len(node.strip.placements)}/{self.root.strip.n_boxes}...')
+            print(f'placing box {len(node.strip.placements) + 1}/{self.root.strip.n_boxes}...')
 
             sample_size = 5
             avg = sum(MCTS.do_playout(node.strip).total_height for _ in range(sample_size)) / sample_size
@@ -144,7 +129,7 @@ class MCTS():
             while (datetime.datetime.now() < start + timeout):
                 self.MC_round(node, avg)
             
-            # print([n.playouts for n in node.children])
+            print([n.playouts for n in node.children])
             node = sorted(node.children, key=lambda x: (x.playouts, -x.strip.total_height), reverse=True)[0]
         
         return node.strip
@@ -194,3 +179,9 @@ class MCTS():
 
         return winrate + self.exploration_factor * ignored_factor
 
+
+def run_tree_search(problem, rounds=100):
+    return Tree(problem).search(rounds)
+
+def run_MCTS(problem):
+    return MCTS(problem).search()
