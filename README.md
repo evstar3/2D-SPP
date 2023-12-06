@@ -26,7 +26,8 @@ This repository examines a specific subset of rectangular packing called **strip
 ```
 usage: packer.py [-h] [-p] [--rounds ROUNDS] [--generations GENERATIONS]
                  [--generation-size GENERATION_SIZE]
-                 [--mutation-rate MUTATION_RATE] [--timeout TIMEOUT]
+                 [--mutation-rate MUTATION_RATE] [--cores CORES]
+                 [--timeout TIMEOUT]
                  filename method
 
 An interface for 2D strip-packing problems
@@ -46,6 +47,7 @@ options:
   --mutation-rate MUTATION_RATE
                         number of swaps to perform for a single mutation in
                         the genetic algorithm
+  --cores CORES         number of cores to use for genetic algorithm
   --timeout TIMEOUT     timeout for each box placement in MCTS
 ```
 

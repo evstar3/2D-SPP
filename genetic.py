@@ -52,26 +52,27 @@ class Generation():
         with concurrent.futures.ProcessPoolExecutor(max_workers=cores) as executor:
             yield from executor.map(self.run_single, self.to_run, chunksize=max(1, len(self.to_run) // cores))
 
-    def run_and_update(self, cores=16):
+    def run_and_update(self, cores):
         for order, score in self._run(cores):
             self.ran.append(Individual(order, score))
 
     def run_single(self, order):
         return order, BL(self.problem, order=order).total_height
 
-def run(problem, generations=15, generation_size=40, mutation_rate=2):
+def run(problem, generations=15, generation_size=40, mutation_rate=2, cores=4):
     gen_best_height = []
 
     print(f'{generations=}')
     print(f'{generation_size=}')
     print(f'{mutation_rate=}')
+    print(f'{cores=}')
 
     gen = Generation(problem, generation_size, None)
     for g in range(generations):
         print(f'Generation {g}:')
 
         start = time.time()
-        gen.run_and_update()
+        gen.run_and_update(cores)
         runtime = time.time() - start
 
         best = sorted(gen.ran)[:generation_size // 2]

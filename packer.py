@@ -54,6 +54,12 @@ parser.add_argument(
     help='number of swaps to perform for a single mutation in the genetic algorithm'
 )
 parser.add_argument(
+    '--cores',
+    required=False,
+    type=int,
+    help='number of cores to use for genetic algorithm'
+)
+parser.add_argument(
     '--timeout',
     required=False,
     type=int,
@@ -74,6 +80,7 @@ possible_arguments = [
     'generation_size',
     'mutation_rate',
     'timeout',
+    'cores',
 ]
 kwargs = {k: v for k, v in vars(args).items() if v and k in possible_arguments}
 
