@@ -55,11 +55,24 @@ class TreeNode():
         Returns a generator of (x, y) tuples
         '''
         if (len(self.strip.placements) == 0):
-            yield (0,0)
+            pass
+            # yield (0,0)
         else:
-            # TODO: generate these from the boxes... probably will be much faster
-            yield from (pos for pos in self.lazy_prospectives(box_id)
-                        if self.strip.would_touch_other_box(box_id, pos))
+            # TODO: generate these from the placed boxes... probably will be much faster
+            for id, (x, y) in self.strip.placements.items():
+                left_edge = x - 1
+                right_edge = x + self.strip.boxes[id].width
+                bottom_edge = y - 1
+                top_edge = y + self.strip.boxes[id].height
+
+                locs = set(itertools.chain(
+                    ((left_edge, y) for y in range(bottom_edge, top_edge + 1)),
+                    ((right_edge, y) for y in range(bottom_edge, top_edge + 1)),
+                    ((x, bottom_edge) for x in range(left_edge, right_edge + 1)),
+                    ((x, top_edge) for x in range(left_edge, right_edge + 1)),
+                ))
+
+                print(sorted(list(locs)))
 
     def possible_placements(self):
         for id in self.strip.unplaced:
