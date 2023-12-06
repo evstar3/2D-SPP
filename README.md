@@ -23,7 +23,31 @@ This repository examines a specific subset of rectangular packing called **strip
 ```
 
 ## `packer.py` Usage
-Run `packer.py --help` for more information on running from the command line.
+```
+usage: packer.py [-h] [-p] [--rounds ROUNDS] [--generations GENERATIONS]
+                 [--generation-size GENERATION_SIZE]
+                 [--mutation-rate MUTATION_RATE] [--timeout TIMEOUT]
+                 filename method
+
+An interface for 2D-SPP problems
+
+positional arguments:
+  filename
+  method                available methods: BL, NFDH, FFDH, SF, TS, MCTS, GEN
+
+options:
+  -h, --help            show this help message and exit
+  -p, --print-strip     prints a visualization of the final packed strip
+  --rounds ROUNDS       number of rounds to perform in tree search
+  --generations GENERATIONS
+                        number of generations to run in the genetic algorithm
+  --generation-size GENERATION_SIZE
+                        size of generations in the genetic algorithm
+  --mutation-rate MUTATION_RATE
+                        number of swaps to perform for a single mutation in
+                        the genetic algorithm
+  --timeout TIMEOUT     timeout for each box placement in MCTS
+```
 
 ## Algorithm Description
 ### BL
